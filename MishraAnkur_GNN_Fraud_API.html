@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GNN Fraud Detection AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+            overflow: hidden;
+            padding: 2em;
+            box-sizing: border-box;
+        }
+
+        .main-card {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+            width: 100%;
+            max-width: 600px;
+            padding: 2.5em;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2em;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0 0 0.25em 0;
+        }
+
+        p.subtitle {
+            color: #6b7280;
+            margin-bottom: 2em;
+        }
+
+        .input-container {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 1.5em;
+            margin-bottom: 1.5em;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 1em;
+        }
+
+        .input-group input {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 1em;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            background-color: #f9fafb;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .analyze-button {
+            margin-top: 1em;
+            width: 100%;
+            padding: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            border-radius: 6px;
+            border: none;
+            background-color: #1f2937;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .analyze-button:hover {
+            background-color: #374151;
+        }
+
+        .demo-prompt-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 2em;
+        }
+
+        .demo-prompt {
+            background-color: #f3f4f6;
+            border: 1px solid transparent;
+            border-radius: 20px;
+            padding: 8px 12px;
+            font-size: 0.9em;
+            color: #4b5563;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .demo-prompt:hover {
+            background-color: #e5e7eb;
+        }
+
+        .result-section {
+            margin-top: 2em;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease;
+            text-align: left;
+        }
+
+        .result-header {
+            font-weight: 600;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .result-header.fraud { color: #ef4444; }
+        .result-header.legitimate { color: #22c55e; }
+        .result-body { color: #6b7280; }
+        .spinner { border: 3px solid rgba(0, 0, 0, 0.1); border-radius: 50%; border-top: 3px solid #3b82f6; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 1em auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="main-card">
+        <h1>GNN Fraud Detection</h1>
+        <p class="subtitle">Analyze transactions using a Graph Neural Network -a Project by Ankur Mishra(AM)
+            .</p>
+
+        <div class="input-container">
+            <div class="input-group">
+                <input type="number" id="Time" placeholder="Time (e.g., 85000)">
+                <input type="number" id="Amount" placeholder="Amount (e.g., 150.00)">
+            </div>
+            <button class="analyze-button" onclick="checkLiveFraud()">Analyze</button>
+        </div>
+
+        <div class="demo-prompt-container">
+            <div class="demo-prompt" onclick="checkDemoFraud('legitimate')">Simulate Legitimate</div>
+            <div class="demo-prompt" onclick="checkDemoFraud('fraudulent')">Simulate Fraud</div>
+        </div>
+
+        <div class="result-section" id="result-section">
+            </div>
+    </div>
+
+    <script>
+        const samples = {
+            legitimate: { Time: 85285, Amount: 1.79, V1: -0.79, V2: 0.94, V3: 1.37, V4: -0.26, V5: 0.03, V6: -0.34, V7: 0.1, V8: 0.23, V9: -0.1, V10: -0.2, V11: -0.1, V12: 0.4, V13: -0.3, V14: -0.0, V15: 0.2, V16: -0.1, V17: 0.0, V18: 0.2, V19: -0.1, V20: 0.1, V21: -0.0, V22: 0.5, V23: -0.0, V24: -0.0, V25: 0.2, V26: 0.0, V27: 0.0, V28: 0.1 },
+            fraudulent: { Time: 80746, Amount: 0.00, V1: -4.7, V2: 4.2, V3: -5.3, V4: 5.4, V5: -4.0, V6: -1.0, V7: -5.3, V8: 2.1, V9: -3.0, V10: -5.4, V11: 4.5, V12: -6.4, V13: 0.2, V14: -8.5, V15: 0.9, V16: -5.2, V17: -12.6, V18: -3.7, V19: 1.5, V20: 0.9, V21: 1.1, V22: 0.1, V23: 0.4, V24: -0.5, V25: -0.1, V26: 0.7, V27: 1.2, V28: 0.4 }
+        };
+        const resultSection = document.getElementById('result-section');
+
+        async function checkLiveFraud() {
+            const transactionData = {
+                Time: parseFloat(document.getElementById('Time').value) || 0,
+                Amount: parseFloat(document.getElementById('Amount').value) || 0
+            };
+            await makePrediction('live', transactionData);
+        }
+
+        async function checkDemoFraud(type) {
+            const transactionData = samples[type];
+            await makePrediction('demo', transactionData);
+        }
+
+        async function makePrediction(mode, data) {
+            resultSection.style.visibility = 'visible';
+            resultSection.style.opacity = 1;
+            resultSection.innerHTML = '<div class="spinner"></div>';
+
+            try {
+                const endpoint = mode === 'live' ? '/predict_live' : '/predict_demo';
+                const response = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (!response.ok) throw new Error('Network response was not ok.');
+                const result = await response.json();
+                displayResult(result);
+_
+            } catch (error) {
+                displayError();
+            }
+        }
+
+        function displayResult(result) {
+            const isFraud = result.is_fraud;
+            const confidence = result.confidence;
+            const headerClass = isFraud ? 'fraud' : 'legitimate';
+            const iconClass = isFraud ? 'fa-exclamation-triangle' : 'fa-check-circle';
+            const title = isFraud ? 'Fraud Detected' : 'Legitimate';
+
+            resultSection.innerHTML = `
+                <div class="result-header ${headerClass}">
+                    <i class="${iconClass}"></i>
+                    <span>${title}</span>
+                </div>
+                <p class="result-body">The GNN model is <strong>${confidence}</strong> confident in this assessment.</p>
+            `;
+        }
+
+        function displayError() {
+            resultSection.innerHTML = `
+                <div class="result-header fraud">
+                    <i class="fas fa-wifi"></i>
+                    <span>Connection Error</span>
+                </div>
+                <p class="result-body">Could not connect to the API. Please ensure the backend server is running.</p>
+            `;
+        }
+    </script>
+</body>
+</html>
